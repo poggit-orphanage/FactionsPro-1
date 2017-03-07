@@ -1,0 +1,8 @@
+--- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/poggit-orphanage/FactionsPro_1.4
+branches:
+- FactionsPro1.4
+projects:
+  FactionsPro_1.4:
+    path: ""
+    icon: factionspro.png
+...
