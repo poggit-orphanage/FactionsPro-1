@@ -76,7 +76,7 @@ class FactionMain extends PluginBase implements Listener {
 		$this->db->exec("CREATE TABLE IF NOT EXISTS home(faction TEXT PRIMARY KEY, x INT, y INT, z INT, world VARCHAR);");
 	}
 		
-	public function onCommand(CommandSender $sender, Command $command, $label, array $args) {
+	public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
 		$this->fCommand->onCommand($sender, $command, $label, $args);
 	}
 	
