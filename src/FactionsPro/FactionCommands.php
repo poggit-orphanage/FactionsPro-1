@@ -26,7 +26,7 @@ class FactionCommands {
 		$this->plugin = $pg;
 	}
 	
-	public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool {
+	public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
 		if($sender instanceof Player) {
 			$player = $sender->getPlayer()->getName();
 			if(strtolower($command->getName('f'))) {
@@ -561,6 +561,7 @@ class FactionCommands {
 		} else {
 			$this->plugin->getServer()->getLogger()->info($this->plugin->formatMessage("Please run command in game"));
 		}
+        return true;
 	}
 
     public function alphanum($string){
