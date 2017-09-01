@@ -34,7 +34,7 @@ class FactionCommands {
 					$sender->sendMessage($this->plugin->formatMessage("Please use /f help for a list of commands"));
 					return true;
 				}
-				if(count($args == 2)) {
+				if(count($args) == 2) {
 					
 					/////////////////////////////// CREATE ///////////////////////////////
 					
