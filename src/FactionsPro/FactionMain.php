@@ -79,7 +79,13 @@ class FactionMain extends PluginBase implements Listener {
 	public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
 		return $this->fCommand->onCommand($sender, $command, $label, $args);
 	}
-	
+
+    public function getFaction($player) {
+        $faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
+        $factionArray = $faction->fetchArray(SQLITE3_ASSOC);
+        return $factionArray["faction"];
+    }
+
 	public function isInFaction($player) {
 		$player = strtolower($player);
 		$result = $this->db->query("SELECT * FROM master WHERE player='$player';");

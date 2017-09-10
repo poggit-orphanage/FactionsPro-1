@@ -80,6 +80,7 @@ class FactionListener implements Listener {
 			$player = $PCE->getPlayer()->getName();
 			$PCE->setFormat("$player: $message");
 		}
+		return true;
 	}
 	
 	public function factionPVP(EntityDamageEvent $factionDamage) {
