@@ -29,11 +29,12 @@ class FactionCommands {
 	public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
 		if($sender instanceof Player) {
 			$player = $sender->getPlayer()->getName();
-            if (strtolower($command->getName() === "f")) {
+            if (strtolower($command->getName()) === "f") {
                 if(empty($args)) {
 					$sender->sendMessage($this->plugin->formatMessage("Please use /f help for a list of commands"));
 					return true;
 				}
+
 				if(count($args) == 2) {
 					
 					/////////////////////////////// CREATE ///////////////////////////////
@@ -280,61 +281,57 @@ class FactionCommands {
 							return true;
 						}
 					}
-					
-					/////////////////////////////// INFO ///////////////////////////////
-					
-					if(strtolower($args[0]) == 'info') {
-						if(isset($args[1])) {
-							if( !($this->alphanum($args[1])) | !($this->plugin->factionExists($args[1]))) {
-								$sender->sendMessage($this->plugin->formatMessage("Faction does not exist"));
-								return true;
-							}
-							$faction = strtolower($args[1]);
-							$result = $this->plugin->db->query("SELECT * FROM motd WHERE faction='$faction';");
-							$array = $result->fetchArray(SQLITE3_ASSOC);
-							$message = $array["message"];
-							$leader = $this->plugin->getLeader($faction);
-							$numPlayers = $this->plugin->getNumberOfPlayers($faction);
-							$sender->sendMessage(TextFormat::BOLD . "-------------------------");
-							$sender->sendMessage("$faction");
-							$sender->sendMessage(TextFormat::BOLD . "Leader: " . TextFormat::RESET . "$leader");
-							$sender->sendMessage(TextFormat::BOLD . "# of Players: " . TextFormat::RESET . "$numPlayers");
-							$sender->sendMessage(TextFormat::BOLD . "MOTD: " . TextFormat::RESET . "$message");
-							$sender->sendMessage(TextFormat::BOLD . "-------------------------");
-						} else {
-							$faction = $this->plugin->getPlayerFaction(strtolower($sender->getName()));
-							$result = $this->plugin->db->query("SELECT * FROM motd WHERE faction='$faction';");
-							$array = $result->fetchArray(SQLITE3_ASSOC);
-							$message = $array["message"];
-							$leader = $this->plugin->getLeader($faction);
-							$numPlayers = $this->plugin->getNumberOfPlayers($faction);
-							$sender->sendMessage(TextFormat::BOLD . "-------------------------");
-							$sender->sendMessage("$faction");
-							$sender->sendMessage(TextFormat::BOLD . "Leader: " . TextFormat::RESET . "$leader");
-							$sender->sendMessage(TextFormat::BOLD . "# of Players: " . TextFormat::RESET . "$numPlayers");
-							$sender->sendMessage(TextFormat::BOLD . "MOTD: " . TextFormat::RESET . "$message");
-							$sender->sendMessage(TextFormat::BOLD . "-------------------------");
-						}
-					}
-					if(strtolower($args[0]) == "help") {
-						if(!isset($args[1]) || $args[1] == 1) {
-							$sender->sendMessage(TextFormat::BLUE . "FactionsPro Help Page 1 of 3" . TextFormat::RED . "\n/f about\n/f accept\n/f claim\n/f create <name>\n/f del\n/f demote <player>\n/f deny");
-							return true;
-						}
-						if($args[1] == 2) {
-							$sender->sendMessage(TextFormat::BLUE . "FactionsPro Help Page 2 of 3" . TextFormat::RED . "\n/f home\n/f help <page>\n/f info\n/f info <faction>\n/f invite <player>\n/f kick <player>\n/f leader <player>\n/f leave");
-							return true;
-						} else {
-							$sender->sendMessage(TextFormat::BLUE . "FactionsPro Help Page 3 of 3" . TextFormat::RED . "\n/f motd\n/f promote <player>\n/f sethome\n/f unclaim\n/f unsethome");
-							return true;
-						}
-					}
+
+                    if (strtolower($args[0] == "forceunclaim")) {
+                        if (!$this->plugin->factionExists($args[1])) {
+                            $sender->sendMessage($this->plugin->formatMessage("The requested faction doesn't exist"));
+                            return true;
+                        }
+                        if (!($sender->isOp())) {
+                            $sender->sendMessage($this->plugin->formatMessage("You must be OP to do this."));
+                            return true;
+                        }
+                        $sender->sendMessage($this->plugin->formatMessage("Successfully unclaimed all plots of $args[1]"));
+                        $this->plugin->db->query("DELETE FROM plots WHERE faction='$args[1]';");
+                    }
+                    if (strtolower($args[0]) == 'forcedelete') {
+                        if (!isset($args[1])) {
+                            $sender->sendMessage($this->plugin->formatMessage("Usage: /f forcedelete <faction>"));
+                            return true;
+                        }
+                        if (!$this->plugin->factionExists($args[1])) {
+                            $sender->sendMessage($this->plugin->formatMessage("The requested faction doesn't exist."));
+                            return true;
+                        }
+                        if (!($sender->isOp())) {
+                            $sender->sendMessage($this->plugin->formatMessage("You must be OP to do this."));
+                            return true;
+                        }
+                        $this->plugin->db->query("DELETE FROM master WHERE faction='$args[1]';");
+                        $this->plugin->db->query("DELETE FROM plots WHERE faction='$args[1]';");
+                        $this->plugin->db->query("DELETE FROM motd WHERE faction='$args[1]';");
+                        $this->plugin->db->query("DELETE FROM home WHERE faction='$args[1]';");
+                        $sender->sendMessage($this->plugin->formatMessage("Unwanted faction was successfully deleted and their faction plots unclaimed!", true));
+                    }
 				}
-				if(count($args == 1)) {
+				if(count($args) == 1) {
+
+                    if (strtolower($args[0]) == 'plotinfo') {
+                        $x = floor($sender->getX());
+                        $y = floor($sender->getY());
+                        $z = floor($sender->getZ());
+                        if (!$this->plugin->isInPlot($sender)) {
+                            $sender->sendMessage($this->plugin->formatMessage("This plot is not claimed by anyone. You can claim it by typing /f claim", true));
+                            return true;
+                        }
+
+                        $fac = $this->plugin->factionFromPoint($x, $z);
+                        $sender->sendMessage($this->plugin->formatMessage("This plot is claimed by $fac"));
+                    }
 					
 					/////////////////////////////// CLAIM ///////////////////////////////
 					
-					if(strtolower($args[0]) == 'claim') {
+					if(strtolower($args[0]) == "claim") {
 						if($this->plugin->prefs->get("ClaimingEnabled") == false) {
 							$sender->sendMessage($this->plugin->formatMessage("Plots are not enabled on this server."));
 							return true;
@@ -365,7 +362,7 @@ class FactionCommands {
 					
 					if(strtolower($args[0]) == "unclaim") {
 						if($this->plugin->prefs->get("ClaimingEnabled") == false) {
-							$sender->sendMessage($this->plugin->formatMessage("Plots are not enabled on this server."));
+							$sender->sendMessage($this->plugin->formatMessage("Faction Plots are not enabled on this server."));
 							return true;
 						}
 						if(!$this->plugin->isLeader($player) && !$this->plugin->hasPermission($player, "unclaim")) {
@@ -374,7 +371,7 @@ class FactionCommands {
 						}
 						$faction = $this->plugin->getPlayerFaction($sender->getName());
 						$this->plugin->db->query("DELETE FROM plots WHERE faction='$faction';");
-						$sender->sendMessage($this->plugin->formatMessage("Plot unclaimed.", true));
+						$sender->sendMessage($this->plugin->formatMessage("Plots unclaimed.", true));
 					}
 					
 					/////////////////////////////// MOTD ///////////////////////////////
@@ -460,7 +457,10 @@ class FactionCommands {
 						if($this->plugin->isInFaction($player) == true) {
 							if($this->plugin->isLeader($player)) {
 								$faction = $this->plugin->getPlayerFaction($player);
-								$this->plugin->db->query("DELETE FROM master WHERE faction='$faction';");
+                                $this->plugin->db->query("DELETE FROM master WHERE faction='$args[1]';");
+                                $this->plugin->db->query("DELETE FROM plots WHERE faction='$args[1]';");
+                                $this->plugin->db->query("DELETE FROM motd WHERE faction='$args[1]';");
+                                $this->plugin->db->query("DELETE FROM home WHERE faction='$args[1]';");
 								$sender->sendMessage($this->plugin->formatMessage("Faction successfully disbanded!", true));
 								if($this->plugin->prefs->get("FactionNametags")) {
 									$this->plugin->updateTag($sender->getName());
@@ -554,9 +554,63 @@ class FactionCommands {
 					/////////////////////////////// ABOUT ///////////////////////////////
 					
 					if(strtolower($args[0] == 'about')) {
-						$sender->sendMessage(TextFormat::BLUE . "FactionsPro v1.4.0 BETA by " . TextFormat::BOLD . "Tethered_\n" . TextFormat::RESET . TextFormat::BLUE . "Twitter: " . TextFormat::ITALIC . "@Tethered_");
+						$sender->sendMessage(TextFormat::BLUE . "FactionsPro v1.4.5 by " . TextFormat::BOLD . "Tethered_\n" . TextFormat::RESET . TextFormat::BLUE . "Twitter: " . TextFormat::ITALIC . "@Tethered_");
 					}
 				}
+
+                /////////////////////////////// INFO ///////////////////////////////
+
+                if(strtolower($args[0]) == 'info') {
+                    if(isset($args[1])) {
+                        if( !($this->alphanum($args[1])) or !($this->plugin->factionExists($args[1]))) {
+                            $sender->sendMessage($this->plugin->formatMessage("Faction $args[1] does not exist"));
+                            return true;
+                        }
+                        $faction = strtolower($args[1]);
+                        $result = $this->plugin->db->query("SELECT * FROM motd WHERE faction='$faction';");
+                        $array = $result->fetchArray(SQLITE3_ASSOC);
+                        $message = $array["message"];
+                        $leader = $this->plugin->getLeader($faction);
+                        $numPlayers = $this->plugin->getNumberOfPlayers($faction);
+                        $sender->sendMessage(TextFormat::BOLD . "-------------------------");
+                        $sender->sendMessage("$faction");
+                        $sender->sendMessage(TextFormat::BOLD . "Leader: " . TextFormat::RESET . "$leader");
+                        $sender->sendMessage(TextFormat::BOLD . "# of Players: " . TextFormat::RESET . "$numPlayers");
+                        $sender->sendMessage(TextFormat::BOLD . "MOTD: " . TextFormat::RESET . "$message");
+                        $sender->sendMessage(TextFormat::BOLD . "-------------------------");
+                    } else {
+                        if(!$this->plugin->isInFaction($player)) {
+                            $sender->sendMessage($this->plugin->formatMessage("You are not in a faction. Use /f info <facname>"));
+                            return true;
+                        }
+                        $faction = $this->plugin->getPlayerFaction(strtolower($sender->getName()));
+                        $result = $this->plugin->db->query("SELECT * FROM motd WHERE faction='$faction';");
+                        $array = $result->fetchArray(SQLITE3_ASSOC);
+                        $message = $array["message"];
+                        $leader = $this->plugin->getLeader($faction);
+                        $numPlayers = $this->plugin->getNumberOfPlayers($faction);
+                        $sender->sendMessage(TextFormat::BOLD . "-------------------------");
+                        $sender->sendMessage("$faction");
+                        $sender->sendMessage(TextFormat::BOLD . "Leader: " . TextFormat::RESET . "$leader");
+                        $sender->sendMessage(TextFormat::BOLD . "# of Players: " . TextFormat::RESET . "$numPlayers");
+                        $sender->sendMessage(TextFormat::BOLD . "MOTD: " . TextFormat::RESET . "$message");
+                        $sender->sendMessage(TextFormat::BOLD . "-------------------------");
+                    }
+                }
+
+                if(strtolower($args[0]) == "help") {
+                    if(!isset($args[1]) || $args[1] == 1) {
+                        $sender->sendMessage(TextFormat::BLUE . "FactionsPro Help Page 1 of 3" . TextFormat::RED . "\n/f about\n/f accept\n/f claim\n/f create <name>\n/f del\n/f demote <player>\n/f deny");
+                        return true;
+                    }
+                    if($args[1] == 2) {
+                        $sender->sendMessage(TextFormat::BLUE . "FactionsPro Help Page 2 of 3" . TextFormat::RED . "\n/f home\n/f help <page>\n/f info\n/f info <faction>\n/f invite <player>\n/f kick <player>\n/f leader <player>\n/f leave");
+                        return true;
+                    } else {
+                        $sender->sendMessage(TextFormat::BLUE . "FactionsPro Help Page 3 of 3" . TextFormat::RED . "\n/f motd\n/f promote <player>\n/f sethome\n/f unclaim\n/f unsethome\n/f unclaim <faction>\n/f forceunclaim [OP]<faction> : Deletes all faction land\n/f forcedelete <faction> : Delete the faction [OP]");
+                        return true;
+                    }
+                }
 			}
 		} else {
 			$this->plugin->getServer()->getLogger()->info($this->plugin->formatMessage("Please run command in game"));
