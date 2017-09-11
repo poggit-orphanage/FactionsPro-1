@@ -457,10 +457,10 @@ class FactionCommands {
 						if($this->plugin->isInFaction($player) == true) {
 							if($this->plugin->isLeader($player)) {
 								$faction = $this->plugin->getPlayerFaction($player);
-                                $this->plugin->db->query("DELETE FROM master WHERE faction='$args[1]';");
-                                $this->plugin->db->query("DELETE FROM plots WHERE faction='$args[1]';");
-                                $this->plugin->db->query("DELETE FROM motd WHERE faction='$args[1]';");
-                                $this->plugin->db->query("DELETE FROM home WHERE faction='$args[1]';");
+                                $this->plugin->db->query("DELETE FROM master WHERE faction='$faction';");
+                                $this->plugin->db->query("DELETE FROM plots WHERE faction='$faction';");
+                                $this->plugin->db->query("DELETE FROM motd WHERE faction='$faction';");
+                                $this->plugin->db->query("DELETE FROM home WHERE faction='$faction';");
 								$sender->sendMessage($this->plugin->formatMessage("Faction successfully disbanded!", true));
 								if($this->plugin->prefs->get("FactionNametags")) {
 									$this->plugin->updateTag($sender->getName());
