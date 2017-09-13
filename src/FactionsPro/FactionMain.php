@@ -21,6 +21,7 @@ class FactionMain extends PluginBase implements Listener {
 	
 	public $db;
 	public $prefs;
+	private $fCommand;
 	
 	public function onEnable() {
 		
@@ -80,81 +81,81 @@ class FactionMain extends PluginBase implements Listener {
 		return $this->fCommand->onCommand($sender, $command, $label, $args);
 	}
 
-    public function getFaction($player) {
-        $faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
+    public function getFaction(string $player) {
+        $faction = $this->db->query("SELECT faction FROM master WHERE player='$player';");
         $factionArray = $faction->fetchArray(SQLITE3_ASSOC);
         return $factionArray["faction"];
     }
 
-	public function isInFaction($player) {
+	public function isInFaction(string $player) {
 		$player = strtolower($player);
-		$result = $this->db->query("SELECT * FROM master WHERE player='$player';");
+		$result = $this->db->query("SELECT player FROM master WHERE player='$player';");
 		$array = $result->fetchArray(SQLITE3_ASSOC);
 		return empty($array) == false;
 	}
 	
-	public function isLeader($player) {
-		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
+	public function isLeader(string $player) {
+		$faction = $this->db->query("SELECT rank FROM master WHERE player='$player';");
 		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
 		return $factionArray["rank"] == "Leader";
 	}
 	
-	public function isOfficer($player) {
-		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
+	public function isOfficer(string $player) {
+		$faction = $this->db->query("SELECT rank FROM master WHERE player='$player';");
 		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
 		return $factionArray["rank"] == "Officer";
 	}
 	
-	public function isMember($player) {
-		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
+	public function isMember(string $player) {
+		$faction = $this->db->query("SELECT rank FROM master WHERE player='$player';");
 		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
 		return $factionArray["rank"] == "Member";
 	}
 	
-	public function getRank($player) {
-		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
+	public function getRank(string $player) {
+		$faction = $this->db->query("SELECT rank FROM master WHERE player='$player';");
 		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
 		return $factionArray["rank"];
 	}
 	
-	public function hasPermission($player, $command) {
+	public function hasPermission(string $player, $command) {
 		$rank = $this->getRank($player);
 		return $this->prefs->get("$rank")["$command"];
 	}
 	
-	public function getPlayerFaction($player) {
-		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
+	public function getPlayerFaction(string $player) {
+		$faction = $this->db->query("SELECT faction FROM master WHERE player='$player';");
 		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
 		return $factionArray["faction"];
 	}
 	
-	public function getLeader($faction) {
-		$leader = $this->db->query("SELECT * FROM master WHERE faction='$faction' AND rank='Leader';");
+	public function getLeader(string $faction) {
+		$leader = $this->db->query("SELECT player FROM master WHERE faction='$faction' AND rank='Leader';");
 		$leaderArray = $leader->fetchArray(SQLITE3_ASSOC);
 		return $leaderArray['player'];
 	}
 	
-	public function factionExists($faction) {
-		$result = $this->db->query("SELECT * FROM master WHERE faction='$faction';");
+	public function factionExists(string $faction) {
+		$result = $this->db->query("SELECT faction FROM master WHERE faction='$faction';");
 		$array = $result->fetchArray(SQLITE3_ASSOC);
 		return empty($array) == false;
 	}
 	
-	public function sameFaction($player1, $player2) {
-		$faction = $this->db->query("SELECT * FROM master WHERE player='$player1';");
+	public function sameFaction(string $player1, string $player2) {
+		$faction = $this->db->query("SELECT faction FROM master WHERE player='$player1';");
 		$player1Faction = $faction->fetchArray(SQLITE3_ASSOC);
-		$faction = $this->db->query("SELECT * FROM master WHERE player='$player2';");
+		$faction = $this->db->query("SELECT faction FROM master WHERE player='$player2';");
 		$player2Faction = $faction->fetchArray(SQLITE3_ASSOC);
 		return $player1Faction["faction"] == $player2Faction["faction"];
 	}
 	
-	public function getNumberOfPlayers($faction) {
-		$query = $this->db->query("SELECT COUNT(*) as count FROM master WHERE faction='$faction';");
+	public function getNumberOfPlayers(string $faction) {
+		$query = $this->db->query("SELECT COUNT(player) as count FROM master WHERE faction='$faction';");
 		$number = $query->fetchArray();
 		return $number['count'];
 	}
 	
-	public function isFactionFull($faction) {
+	public function isFactionFull(string $faction) {
 		return $this->getNumberOfPlayers($faction) >= $this->prefs->get("MaxPlayersPerFaction");
 	}
 	
@@ -163,7 +164,7 @@ class FactionMain extends PluginBase implements Listener {
 		return in_array($name, $bannedNames);
 	}
 	
-public function newPlot($faction, $x1, $z1, $x2, $z2) {
+public function newPlot(string $faction, $x1, $z1, $x2, $z2) {
 		$stmt = $this->db->prepare("INSERT OR REPLACE INTO plots (faction, x1, z1, x2, z2) VALUES (:faction, :x1, :z1, :x2, :z2);");
 		$stmt->bindValue(":faction", $faction);
 		$stmt->bindValue(":x1", $x1);
@@ -186,21 +187,21 @@ public function newPlot($faction, $x1, $z1, $x2, $z2) {
 		return true;
 	}
 	
-	public function isInPlot($player) {
+	public function isInPlot(Player $player) {
 		$x = $player->getFloorX();
 		$z = $player->getFloorZ();
-		$result = $this->db->query("SELECT * FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
+		$result = $this->db->query("SELECT faction FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
 		$array = $result->fetchArray(SQLITE3_ASSOC);
 		return empty($array) == false;
 	}
 	
 	public function factionFromPoint($x,$z) {
-		$result = $this->db->query("SELECT * FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
+		$result = $this->db->query("SELECT faction FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
 		$array = $result->fetchArray(SQLITE3_ASSOC);
 		return $array["faction"];
 	}
 	
-	public function inOwnPlot($player) {
+	public function inOwnPlot(Player $player) {
 		$playerName = $player->getName();
 		$x = $player->getFloorX();
 		$z = $player->getFloorZ();
@@ -208,7 +209,7 @@ public function newPlot($faction, $x1, $z1, $x2, $z2) {
 	}
 	
 	public function pointIsInPlot($x,$z) {
-		$result = $this->db->query("SELECT * FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
+		$result = $this->db->query("SELECT faction FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
 		$array = $result->fetchArray(SQLITE3_ASSOC);
 		return !empty($array);
 	}
@@ -225,19 +226,19 @@ public function newPlot($faction, $x1, $z1, $x2, $z2) {
 		}
 	}
 	
-	public function motdWaiting($player) {
-		$stmt = $this->db->query("SELECT * FROM motdrcv WHERE player='$player';");
+	public function motdWaiting(string $player) {
+		$stmt = $this->db->query("SELECT player FROM motdrcv WHERE player='$player';");
 		$array = $stmt->fetchArray(SQLITE3_ASSOC);
 		return !empty($array);
 	}
 	
-	public function getMOTDTime($player) {
-		$stmt = $this->db->query("SELECT * FROM motdrcv WHERE player='$player';");
+	public function getMOTDTime(string $player) {
+		$stmt = $this->db->query("SELECT timestamp FROM motdrcv WHERE player='$player';");
 		$array = $stmt->fetchArray(SQLITE3_ASSOC);
 		return $array['timestamp'];
 	}
 	
-	public function setMOTD($faction, $player, $msg) {
+	public function setMOTD(string $faction, string $player, string $msg) {
 		$stmt = $this->db->prepare("INSERT OR REPLACE INTO motd (faction, message) VALUES (:faction, :message);");
 		$stmt->bindValue(":faction", $faction);
 		$stmt->bindValue(":message", $msg);
@@ -246,7 +247,7 @@ public function newPlot($faction, $x1, $z1, $x2, $z2) {
 		$this->db->query("DELETE FROM motdrcv WHERE player='$player';");
 	}
 	
-	public function updateTag($player) {
+	public function updateTag(string $player) {
 		$p = $this->getServer()->getPlayer($player);
 		if(!$this->isInFaction($player)) {
 			$p->setNameTag($player);
