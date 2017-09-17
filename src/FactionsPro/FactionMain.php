@@ -22,6 +22,8 @@ class FactionMain extends PluginBase implements Listener {
 	public $db;
 	public $prefs;
 	private $fCommand;
+	public $antispam;
+	public $purechat;
 	
 	public function onEnable() {
 		
@@ -35,6 +37,16 @@ class FactionMain extends PluginBase implements Listener {
 		
 		$this->getServer()->getPluginManager()->registerEvents(new FactionListener($this), $this);
 		$this->fCommand = new FactionCommands($this);
+
+        $this->antispam = $this->getServer()->getPluginManager()->getPlugin("AntiSpamPro");
+        if ($this->antispam) {
+            $this->getLogger()->info("AntiSpamPro Integration Enabled");
+        }
+
+        $this->purechat = $this->getServer()->getPluginManager()->getPlugin("PureChat");
+        if ($this->purechat) {
+            $this->getLogger()->info("PureChat Integration Enabled");
+        }
 		
 		$this->prefs = new Config($this->getDataFolder() . "Prefs.yml", CONFIG::YAML, array(
 				"MaxFactionNameLength" => 20,
@@ -158,11 +170,13 @@ class FactionMain extends PluginBase implements Listener {
 	public function isFactionFull(string $faction) {
 		return $this->getNumberOfPlayers($faction) >= $this->prefs->get("MaxPlayersPerFaction");
 	}
-	
-	public function isNameBanned($name) {
-		$bannedNames = explode(":", file_get_contents($this->getDataFolder() . "BannedNames.txt"));
-		return in_array($name, $bannedNames);
-	}
+
+    public function isNameBanned($name) {
+        $bannedNames = explode(":", file_get_contents($this->getDataFolder() . "BannedNames.txt"));
+        $isbanned = false;
+        if (isset($name) && isset($this->antispam) && $this->antispam->getProfanityFilter()->hasProfanity($name)) $isbanned = true;
+        return (in_array($name, $bannedNames) || $isbanned);
+    }
 	
 public function newPlot(string $faction, $x1, $z1, $x2, $z2) {
 		$stmt = $this->db->prepare("INSERT OR REPLACE INTO plots (faction, x1, z1, x2, z2) VALUES (:faction, :x1, :z1, :x2, :z2);");
@@ -246,19 +260,27 @@ public function newPlot(string $faction, $x1, $z1, $x2, $z2) {
 		
 		$this->db->query("DELETE FROM motdrcv WHERE player='$player';");
 	}
-	
-	public function updateTag(string $player) {
-		$p = $this->getServer()->getPlayer($player);
-		if(!$this->isInFaction($player)) {
-			$p->setNameTag($player);
-		} elseif($this->isLeader($player)) {
-			$p->setNameTag("**[" . $this->getPlayerFaction($player) . "] " . $player);
-		} elseif($this->isOfficer($player)) {
-			$p->setNameTag("*[" . $this->getPlayerFaction($player) . "] " . $player);
-		} elseif($this->isMember($player)) {
-			$p->setNameTag("[" . $this->getPlayerFaction($player) . "] " . $player);
-		}
-	}
+
+    public function updateTag($playername) {
+        $p = $this->getServer()->getPlayer($playername);
+        $f = $this->getPlayerFaction($playername);
+        if (!$this->isInFaction($playername)) {
+            if(isset($this->purechat)){
+                $levelName = $this->purechat->getConfig()->get("enable-multiworld-chat") ? $p->getLevel()->getName() : null;
+                $nameTag = $this->purechat->getNametag($p, $levelName);
+                $p->setNameTag($nameTag);
+            }else{
+                $p->setNameTag(TextFormat::ITALIC . TextFormat::YELLOW . "<$playername>");
+            }
+        }elseif(isset($this->purechat)) {
+            $levelName = $this->purechat->getConfig()->get("enable-multiworld-chat") ? $p->getLevel()->getName() : null;
+            $nameTag = $this->purechat->getNametag($p, $levelName);
+            $p->setNameTag($nameTag);
+        } else {
+            $p->setNameTag(TextFormat::ITALIC . TextFormat::GOLD . "<$f> " .
+                TextFormat::ITALIC . TextFormat::YELLOW . "<$playername>");
+        }
+    }
 	
 	public function onDisable() {
 		$this->db->close();
