@@ -19,27 +19,27 @@ use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 
 
-class FactionListener implements Listener {
-	
+class FactionListener implements Listener{
+
 	public $plugin;
-	
-	public function __construct(FactionMain $pg) {
+
+	public function __construct(FactionMain $pg){
 		$this->plugin = $pg;
 	}
-	
-	public function factionChat(PlayerChatEvent $PCE) {
-		
+
+	public function factionChat(PlayerChatEvent $PCE){
+
 		$player = strtolower($PCE->getPlayer()->getName());
 		//MOTD Check
 		//TODO Use arrays instead of database for faster chatting?
-		
-		if($this->plugin->motdWaiting($player)) {
-			if(time() - $this->plugin->getMOTDTime($player) > 30) {
+
+		if($this->plugin->motdWaiting($player)){
+			if(time() - $this->plugin->getMOTDTime($player) > 30){
 				$PCE->getPlayer()->sendMessage($this->plugin->formatMessage("Timed out. Please use /f motd again."));
 				$this->plugin->db->query("DELETE FROM motdrcv WHERE player='$player';");
 				$PCE->setCancelled(true);
 				return true;
-			} else {
+			}else{
 				$motd = $PCE->getMessage();
 				$faction = $this->plugin->getPlayerFaction($player);
 				$this->plugin->setMOTD($faction, $player, $motd);
@@ -48,86 +48,84 @@ class FactionListener implements Listener {
 			}
 			return true;
 		}
-		
+
 		//Member
-		if($this->plugin->isInFaction($PCE->getPlayer()->getName()) && $this->plugin->isMember($PCE->getPlayer()->getName())) {
+		if($this->plugin->isInFaction($PCE->getPlayer()->getName()) && $this->plugin->isMember($PCE->getPlayer()->getName())){
 			$message = $PCE->getMessage();
 			$player = $PCE->getPlayer()->getName();
 			$faction = $this->plugin->getPlayerFaction($player);
-			
+
 			$PCE->setFormat("[$faction] $player: $message");
 			return true;
-		}
-		//Officer
-		elseif($this->plugin->isInFaction($PCE->getPlayer()->getName()) && $this->plugin->isOfficer($PCE->getPlayer()->getName())) {
+		}//Officer
+		elseif($this->plugin->isInFaction($PCE->getPlayer()->getName()) && $this->plugin->isOfficer($PCE->getPlayer()->getName())){
 			$message = $PCE->getMessage();
 			$player = $PCE->getPlayer()->getName();
 			$faction = $this->plugin->getPlayerFaction($player);
-			
+
 			$PCE->setFormat("*[$faction] $player: $message");
 			return true;
-		}
-		//Leader
-		elseif($this->plugin->isInFaction($PCE->getPlayer()->getName()) && $this->plugin->isLeader($PCE->getPlayer()->getName())) {
+		}//Leader
+		elseif($this->plugin->isInFaction($PCE->getPlayer()->getName()) && $this->plugin->isLeader($PCE->getPlayer()->getName())){
 			$message = $PCE->getMessage();
 			$player = $PCE->getPlayer()->getName();
 			$faction = $this->plugin->getPlayerFaction($player);
 			$PCE->setFormat("**[$faction] $player: $message");
 			return true;
-		//Not in faction
-		}else {
+			//Not in faction
+		}else{
 			$message = $PCE->getMessage();
 			$player = $PCE->getPlayer()->getName();
 			$PCE->setFormat("$player: $message");
 		}
 		return true;
 	}
-	
-	public function factionPVP(EntityDamageEvent $factionDamage) {
-		if($factionDamage instanceof EntityDamageByEntityEvent) {
-			if(!($factionDamage->getEntity() instanceof Player) or !($factionDamage->getDamager() instanceof Player)) {
+
+	public function factionPVP(EntityDamageEvent $factionDamage){
+		if($factionDamage instanceof EntityDamageByEntityEvent){
+			if(!($factionDamage->getEntity() instanceof Player) or !($factionDamage->getDamager() instanceof Player)){
 				return true;
 			}
-			if(($this->plugin->isInFaction($factionDamage->getEntity()->getPlayer()->getName()) == false) or ($this->plugin->isInFaction($factionDamage->getDamager()->getPlayer()->getName()) == false) ) {
+			if(($this->plugin->isInFaction($factionDamage->getEntity()->getPlayer()->getName()) == false) or ($this->plugin->isInFaction($factionDamage->getDamager()->getPlayer()->getName()) == false)){
 				return true;
 			}
-			if(($factionDamage->getEntity() instanceof Player) and ($factionDamage->getDamager() instanceof Player)) {
+			if(($factionDamage->getEntity() instanceof Player) and ($factionDamage->getDamager() instanceof Player)){
 				$player1 = $factionDamage->getEntity()->getPlayer()->getName();
 				$player2 = $factionDamage->getDamager()->getPlayer()->getName();
-				if($this->plugin->sameFaction($player1, $player2) == true) {
+				if($this->plugin->sameFaction($player1, $player2) == true){
 					$factionDamage->setCancelled(true);
 				}
 			}
 		}
 	}
 
-    public function factionBlockBreakProtect(BlockBreakEvent $event) {
-        $x = $event->getBlock()->getX();
-        $z = $event->getBlock()->getZ();
-        if($this->plugin->pointIsInPlot($x, $z)) {
-            if($this->plugin->factionFromPoint($x, $z) === $this->plugin->getFaction($event->getPlayer()->getName())) {
-                return;
-            } else {
-                $event->setCancelled(true);
-                $event->getPlayer()->sendMessage($this->plugin->formatMessage("You cannot break blocks here. This is already a property of a faction. Type /f plotinfo for details."));
-                return;
-            }
-        }
-    }
-
-    public function factionBlockPlaceProtect(BlockPlaceEvent $event) {
-        $x = $event->getBlock()->getX();
-        $z = $event->getBlock()->getZ();
-        if($this->plugin->pointIsInPlot($x, $z)) {
-            if($this->plugin->factionFromPoint($x, $z) == $this->plugin->getFaction($event->getPlayer()->getName())) {
-                return;
-            } else {
-                $event->setCancelled(true);
-                $event->getPlayer()->sendMessage($this->plugin->formatMessage("You cannot place blocks here. This is already a property of a faction. Type /f plotinfo for details."));
-                return;
-            }
-        }
-    }
-
-
+	public function factionBlockBreakProtect(BlockBreakEvent $event){
+		$x = $event->getBlock()->getX();
+		$z = $event->getBlock()->getZ();
+		if($this->plugin->pointIsInPlot($x, $z)){
+			if($this->plugin->factionFromPoint($x, $z) === $this->plugin->getFaction($event->getPlayer()->getName())){
+				return;
+			}else{
+				$event->setCancelled(true);
+				$event->getPlayer()->sendMessage($this->plugin->formatMessage("You cannot break blocks here. This is already a property of a faction. Type /f plotinfo for details."));
+				return;
+			}
+		}
 	}
+
+	public function factionBlockPlaceProtect(BlockPlaceEvent $event){
+		$x = $event->getBlock()->getX();
+		$z = $event->getBlock()->getZ();
+		if($this->plugin->pointIsInPlot($x, $z)){
+			if($this->plugin->factionFromPoint($x, $z) == $this->plugin->getFaction($event->getPlayer()->getName())){
+				return;
+			}else{
+				$event->setCancelled(true);
+				$event->getPlayer()->sendMessage($this->plugin->formatMessage("You cannot place blocks here. This is already a property of a faction. Type /f plotinfo for details."));
+				return;
+			}
+		}
+	}
+
+
+}
