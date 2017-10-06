@@ -98,12 +98,12 @@ class FactionCommands{
 						return true;
 					}
 					$invited = $this->plugin->getServer()->getPlayerExact($args[1]);
-					if($this->plugin->isInFaction($invited) == true){
-						$sender->sendMessage($this->plugin->formatMessage("Player is currently in a faction"));
-						return true;
-					}
 					if(!$invited instanceof Player){
 						$sender->sendMessage($this->plugin->formatMessage("Player not online!"));
+						return true;
+					}
+					if($this->plugin->isInFaction($invited->getName()) === true){
+						$sender->sendMessage($this->plugin->formatMessage("Player is currently in a faction"));
 						return true;
 					}
 					$factionName = $this->plugin->getPlayerFaction($playerName);
