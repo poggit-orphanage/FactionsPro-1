@@ -86,15 +86,13 @@ class FactionListener implements Listener{
 			if(!($factionDamage->getEntity() instanceof Player) or !($factionDamage->getDamager() instanceof Player)){
 				return true;
 			}
-			if(($this->plugin->isInFaction($factionDamage->getEntity()->getPlayer()->getName()) == false) or ($this->plugin->isInFaction($factionDamage->getDamager()->getPlayer()->getName()) == false)){
+			if(($this->plugin->isInFaction($factionDamage->getEntity()->getName()) == false) or ($this->plugin->isInFaction($factionDamage->getDamager()->getName()) == false)){
 				return true;
 			}
-			if(($factionDamage->getEntity() instanceof Player) and ($factionDamage->getDamager() instanceof Player)){
-				$player1 = $factionDamage->getEntity()->getPlayer()->getName();
-				$player2 = $factionDamage->getDamager()->getPlayer()->getName();
+				$player1 = $factionDamage->getEntity()->getName();
+				$player2 = $factionDamage->getDamager()->getName();
 				if($this->plugin->sameFaction($player1, $player2) == true){
 					$factionDamage->setCancelled(true);
-				}
 			}
 		}
 	}
@@ -102,8 +100,9 @@ class FactionListener implements Listener{
 	public function factionBlockBreakProtect(BlockBreakEvent $event){
 		$x = $event->getBlock()->getX();
 		$z = $event->getBlock()->getZ();
-		if($this->plugin->pointIsInPlot($x, $z)){
-			if($this->plugin->factionFromPoint($x, $z) === $this->plugin->getFaction($event->getPlayer()->getName())){
+        $level = $event->getBlock()->getLevel()->getName();
+		if($this->plugin->pointIsInPlot($x, $z, $level)){
+			if($this->plugin->factionFromPoint($x, $z, $level) === $this->plugin->getFaction($event->getPlayer()->getName())){
 				return;
 			}else{
 				$event->setCancelled(true);
@@ -116,8 +115,9 @@ class FactionListener implements Listener{
 	public function factionBlockPlaceProtect(BlockPlaceEvent $event){
 		$x = $event->getBlock()->getX();
 		$z = $event->getBlock()->getZ();
-		if($this->plugin->pointIsInPlot($x, $z)){
-			if($this->plugin->factionFromPoint($x, $z) == $this->plugin->getFaction($event->getPlayer()->getName())){
+        $level = $event->getBlock()->getLevel()->getName();
+		if($this->plugin->pointIsInPlot($x, $z, $level)){
+			if($this->plugin->factionFromPoint($x, $z, $level) == $this->plugin->getFaction($event->getPlayer()->getName())){
 				return;
 			}else{
 				$event->setCancelled(true);

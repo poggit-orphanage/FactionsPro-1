@@ -6,14 +6,9 @@ use pocketmine\plugin\PluginBase;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
 use pocketmine\event\Listener;
-use pocketmine\event\block\BlockBreakEvent;
-use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\Player;
-use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\utils\TextFormat;
-use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\utils\Config;
-use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\block\Snow;
 use pocketmine\math\Vector3;
 
@@ -85,9 +80,14 @@ class FactionMain extends PluginBase implements Listener{
 		$this->db->exec("CREATE TABLE IF NOT EXISTS confirm (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, invitedby TEXT, timestamp INT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS motdrcv (player TEXT PRIMARY KEY, timestamp INT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS motd (faction TEXT PRIMARY KEY, message TEXT);");
-		$this->db->exec("CREATE TABLE IF NOT EXISTS plots(faction TEXT PRIMARY KEY, x1 INT, z1 INT, x2 INT, z2 INT);");
+		$this->db->exec("CREATE TABLE IF NOT EXISTS plots(faction TEXT PRIMARY KEY, x1 INT, z1 INT, x2 INT, z2 INT, world TEXT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS home(faction TEXT PRIMARY KEY, x INT, y INT, z INT, world VARCHAR);");
-	}
+        try{
+            $this->db->exec("ALTER TABLE plots ADD COLUMN world TEXT default null");
+            Server::getInstance()->getLogger()->info(TextFormat::GREEN . "FactionProBeta: Added 'world' column to plots");
+        }catch(\ErrorException $ex){
+        }
+    }
 
 	public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
 		return $this->fCommand->onCommand($sender, $command, $label, $args);
@@ -178,60 +178,75 @@ class FactionMain extends PluginBase implements Listener{
 		return (in_array($name, $bannedNames) || $isbanned);
 	}
 
-	public function newPlot(string $faction, $x1, $z1, $x2, $z2){
-		$stmt = $this->db->prepare("INSERT OR REPLACE INTO plots (faction, x1, z1, x2, z2) VALUES (:faction, :x1, :z1, :x2, :z2);");
-		$stmt->bindValue(":faction", $faction);
-		$stmt->bindValue(":x1", $x1);
-		$stmt->bindValue(":z1", $z1);
-		$stmt->bindValue(":x2", $x2);
-		$stmt->bindValue(":z2", $z2);
-		$result = $stmt->execute();
-	}
+    public function newPlot($faction, $x1, $z1, $x2, $z2, string $level) {
+        $stmt = $this->db->prepare("INSERT OR REPLACE INTO plots (faction, x1, z1, x2, z2, world) VALUES (:faction, :x1, :z1, :x2, :z2, :world);");
+        $stmt->bindValue(":faction", $faction);
+        $stmt->bindValue(":x1", $x1);
+        $stmt->bindValue(":z1", $z1);
+        $stmt->bindValue(":x2", $x2);
+        $stmt->bindValue(":z2", $z2);
+        $stmt->bindValue(":world", $level);
+        $stmt->execute();
+    }
 
-	public function drawPlot($sender, $faction, $x, $y, $z, $level, $size){
-		$arm = ($size - 1) / 2;
-		$block = new Snow();
-		if($this->cornerIsInPlot($x + $arm, $z + $arm, $x - $arm, $z - $arm)){
-			$claimedBy = $this->factionFromPoint($x, $z);
-			$sender->sendMessage($this->formatMessage("This area is aleady claimed by $claimedBy."));
-			return false;
-		}
-		$level->setBlock(new Vector3($x + $arm, $y, $z + $arm), $block);
-		$level->setBlock(new Vector3($x - $arm, $y, $z - $arm), $block);
-		$this->newPlot($faction, $x + $arm, $z + $arm, $x - $arm, $z - $arm);
-		return true;
-	}
+    public function drawPlot($sender, $faction, $x, $y, $z, Level $level, $size) {
+        $arm = ($size - 1) / 2;
+        $block = new Snow();
+        if ($this->cornerIsInPlot($x + $arm, $z + $arm, $x - $arm, $z - $arm, $level->getName())) {
+            $claimedBy = $this->factionFromPoint($x, $z, $level->getName());
+            $power_claimedBy = $this->getFactionPower($claimedBy);
+            $power_sender = $this->getFactionPower($faction);
 
-	public function isInPlot(Player $player){
-		$x = $player->getFloorX();
-		$z = $player->getFloorZ();
-		$result = $this->db->query("SELECT faction FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
-		$array = $result->fetchArray(SQLITE3_ASSOC);
-		return empty($array) == false;
-	}
+            if ($this->prefs->get("EnableOverClaim")) {
+                if ($power_sender < $power_claimedBy) {
+                    $sender->sendMessage($this->formatMessage("This area is aleady claimed by $claimedBy with $power_claimedBy STR. Your faction has $power_sender power. You don't have enough power to overclaim this plot."));
+                } else {
+                    $sender->sendMessage($this->formatMessage("This area is aleady claimed by $claimedBy with $power_claimedBy STR. Your faction has $power_sender power. Type /f overclaim to overclaim this plot if you want."));
+                }
+                return false;
+            } else {
+                $sender->sendMessage($this->formatMessage("Overclaiming is disabled."));
+                return false;
+            }
+        }
+        $level->setBlock(new Vector3($x + $arm, $y, $z + $arm), $block);
+        $level->setBlock(new Vector3($x - $arm, $y, $z - $arm), $block);
+        $this->newPlot($faction, $x + $arm, $z + $arm, $x - $arm, $z - $arm, $level->getName());
+        return true;
+    }
 
-	public function factionFromPoint($x, $z){
-		$result = $this->db->query("SELECT faction FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
-		$array = $result->fetchArray(SQLITE3_ASSOC);
-		return $array["faction"];
-	}
+    public function isInPlot(Player $player) {
+        $x = $player->getFloorX();
+        $z = $player->getFloorZ();
+        $level = $player->getLevel()->getName();
+        $result = $this->db->query("SELECT faction FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2 AND world = '$level';");
+        $array = $result->fetchArray(SQLITE3_ASSOC);
+        return empty($array) == false;
+    }
 
-	public function inOwnPlot(Player $player){
-		$playerName = $player->getName();
-		$x = $player->getFloorX();
-		$z = $player->getFloorZ();
-		return $this->getPlayerFaction($playerName) == $this->factionFromPoint($x, $z);
-	}
+    public function factionFromPoint($x, $z, string $level) {
+        $result = $this->db->query("SELECT faction FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2 AND world = '$level';");
+        $array = $result->fetchArray(SQLITE3_ASSOC);
+        return $array["faction"];
+    }
 
-	public function pointIsInPlot($x, $z){
-		$result = $this->db->query("SELECT faction FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
-		$array = $result->fetchArray(SQLITE3_ASSOC);
-		return !empty($array);
-	}
+    public function inOwnPlot(Player $player) {
+        $playerName = $player->getName();
+        $x = $player->getFloorX();
+        $z = $player->getFloorZ();
+        $level = $player->getLevel()->getName();
+        return $this->getPlayerFaction($playerName) == $this->factionFromPoint($x, $z, $level);
+    }
 
-	public function cornerIsInPlot($x1, $z1, $x2, $z2){
-		return ($this->pointIsInPlot($x1, $z1) || $this->pointIsInPlot($x1, $z2) || $this->pointIsInPlot($x2, $z1) || $this->pointIsInPlot($x2, $z2));
-	}
+    public function pointIsInPlot($x, $z, string $level) {
+        $result = $this->db->query("SELECT faction FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2 AND world = '$level';");
+        $array = $result->fetchArray(SQLITE3_ASSOC);
+        return !empty($array);
+    }
+
+    public function cornerIsInPlot($x1, $z1, $x2, $z2, string $level) {
+        return($this->pointIsInPlot($x1, $z1, $level) || $this->pointIsInPlot($x1, $z2, $level) || $this->pointIsInPlot($x2, $z1, $level) || $this->pointIsInPlot($x2, $z2, $level));
+    }
 
 	public function formatMessage($string, $confirm = false){
 		if($confirm){

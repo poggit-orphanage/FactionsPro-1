@@ -2,20 +2,10 @@
 
 namespace FactionsPro;
 
-use pocketmine\plugin\PluginBase;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
-use pocketmine\event\Listener;
-use pocketmine\event\block\BlockBreakEvent;
-use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\Player;
-use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\utils\TextFormat;
-use pocketmine\scheduler\PluginTask;
-use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\utils\Config;
-use pocketmine\event\entity\EntityDamageEvent;
-use pocketmine\math\Vector3;
 use pocketmine\level\Position;
 
 class FactionCommands{
@@ -69,7 +59,7 @@ class FactionCommands{
 						$stmt->bindValue(":player", $playername);
 						$stmt->bindValue(":faction", $factionName);
 						$stmt->bindValue(":rank", $rank);
-						$result = $stmt->execute();
+						$stmt->execute();
 						if($this->plugin->prefs->get("FactionNametags")){
 							$this->plugin->updateTag($playername);
 						}
@@ -145,19 +135,18 @@ class FactionCommands{
 						return true;
 					}
 					$factionName = $this->plugin->getPlayerFaction($playerName);
-					$factionName = $this->plugin->getPlayerFaction($playerName);
 
 					$stmt = $this->plugin->db->prepare("INSERT OR REPLACE INTO master (player, faction, rank) VALUES (:player, :faction, :rank);");
 					$stmt->bindValue(":player", $playerName);
 					$stmt->bindValue(":faction", $factionName);
 					$stmt->bindValue(":rank", "Member");
-					$result = $stmt->execute();
+					$stmt->execute();
 
 					$stmt = $this->plugin->db->prepare("INSERT OR REPLACE INTO master (player, faction, rank) VALUES (:player, :faction, :rank);");
 					$stmt->bindValue(":player", strtolower($args[1]));
 					$stmt->bindValue(":faction", $factionName);
 					$stmt->bindValue(":rank", "Leader");
-					$result = $stmt->execute();
+					$stmt->execute();
 
 
 					$sender->sendMessage($this->plugin->formatMessage("You are no longer leader!", true));
@@ -264,7 +253,6 @@ class FactionCommands{
 						$sender->sendMessage($this->plugin->formatMessage("Player is not in this faction!"));
 						return true;
 					}
-					$kicked = $this->plugin->getServer()->getPlayer($args[1]);
 					$factionName = $this->plugin->getPlayerFaction($playerName);
 					$this->plugin->db->query("DELETE FROM master WHERE player='$args[1]';");
 					$sender->sendMessage($this->plugin->formatMessage("You successfully kicked $args[1]!", true));
@@ -316,14 +304,13 @@ class FactionCommands{
 
 				if(strtolower($args[0]) == 'plotinfo'){
 					$x = floor($sender->getX());
-					$y = floor($sender->getY());
 					$z = floor($sender->getZ());
 					if(!$this->plugin->isInPlot($sender)){
 						$sender->sendMessage($this->plugin->formatMessage("This plot is not claimed by anyone. You can claim it by typing /f claim", true));
 						return true;
 					}
 
-					$fac = $this->plugin->factionFromPoint($x, $z);
+					$fac = $this->plugin->factionFromPoint($x, $z, $sender->getLevel()->getName());
 					$sender->sendMessage($this->plugin->formatMessage("This plot is claimed by $fac"));
 				}
 
@@ -473,7 +460,6 @@ class FactionCommands{
 
 				if(strtolower($args[0] == "leave")){
 					if($this->plugin->isLeader($playerName) == false){
-						$remove = $sender->getPlayer()->getNameTag();
 						$faction = $this->plugin->getPlayerFaction($playerName);
 						$name = $sender->getName();
 						$this->plugin->db->query("DELETE FROM master WHERE player='$name';");
@@ -538,8 +524,8 @@ class FactionCommands{
 					$result = $this->plugin->db->query("SELECT * FROM home WHERE faction = '$faction';");
 					$array = $result->fetchArray(SQLITE3_ASSOC);
 					if(!empty($array)){
-						$world = $this->plugin->getServer()->getLevelByName($array['world']);
-						$sender->getPlayer()->teleport(new Position($array['x'], $array['y'], $array['z'], $world));
+						$level = $this->plugin->getServer()->getLevelByName($array['world']);
+						$sender->getPlayer()->teleport(new Position($array['x'], $array['y'], $array['z'], $level));
 						$sender->sendMessage($this->plugin->formatMessage("Teleported home.", true));
 						return true;
 					}else{
