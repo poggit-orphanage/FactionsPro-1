@@ -1,4 +1,7 @@
-##Features
+## FactionsPro
+A fully-featured Factions plugin for PocketMine-MP — by Tethered, modified by Awzaw.
+
+### Features
 * Easily create, delete, and manage factions
 * Players in the same faction don't inflict PVP damage on each other
 * Kick annoying players
@@ -6,7 +9,7 @@
 * Claim plots and create a dominating base
 * Three ranks: Member, Officer and Leader
 
-##Commands
+### Commands
 * /f about - view plugin information
 * /f accept - accept an invite
 * /f claim - claim a plot of land (two snow blocks will mark out the corners)
