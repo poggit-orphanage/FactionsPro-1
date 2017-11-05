@@ -1,4 +1,10 @@
-##Features
+### General
+#### FactionsProBeta
+[![Poggit Release](https://poggit.pmmp.io/shield.approved/FactionsProBeta)](https://poggit.pmmp.io/p/FactionsProBeta)
+
+An incomplete rewrite of FactionsPro for PMMP PocketMine-MP by Tethered
+
+### Features
 * Easily create, delete, and manage factions
 * Players in the same faction don't inflict PVP damage on each other
 * Kick annoying players
@@ -6,7 +12,7 @@
 * Claim plots and create a dominating base
 * Three ranks: Member, Officer and Leader
 
-##Commands
+### Commands
 * /f about - view plugin information
 * /f accept - accept an invite
 * /f claim - claim a plot of land (two snow blocks will mark out the corners)
@@ -27,3 +33,19 @@
 * /f sethome - set your Faction's home point
 * /f unclaim - unclaim your plot
 * /f unsethome unset your Faction's home
+
+### Permissions
+
+There is only one permission for all the faction commands. Some commands are OP only.
+ 
+`f.command` - access to FactionsPro user commands.
+
+### Extras
+
+Add PureChat to display factions in chat, and AntiSpamPro to prevent inappropriate fac names
+
+### Credits
+
+Credit and thanks to TETHERED for writing this plugin, and various other teams who contributed other parts of the code. Let us know if you'd like credit, we don't know who you all are.
+
+
