@@ -11,6 +11,7 @@ use pocketmine\utils\TextFormat;
 use pocketmine\utils\Config;
 use pocketmine\block\Snow;
 use pocketmine\math\Vector3;
+use pocketmine\level\Level;
 
 class FactionMain extends PluginBase implements Listener{
 
