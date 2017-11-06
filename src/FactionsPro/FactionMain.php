@@ -84,7 +84,7 @@ class FactionMain extends PluginBase implements Listener{
 		$this->db->exec("CREATE TABLE IF NOT EXISTS home(faction TEXT PRIMARY KEY, x INT, y INT, z INT, world VARCHAR);");
         try{
             $this->db->exec("ALTER TABLE plots ADD COLUMN world TEXT default null");
-            Server::getInstance()->getLogger()->info(TextFormat::GREEN . "FactionProBeta: Added 'world' column to plots");
+            $this->getLogger()->info(TextFormat::GREEN . "FactionProBeta: Added 'world' column to plots");
         }catch(\ErrorException $ex){
         }
     }
