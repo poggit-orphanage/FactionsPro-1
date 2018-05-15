@@ -97,6 +97,11 @@ class FactionListener implements Listener{
 		}
 	}
 
+	/**
+	 * @param BlockBreakEvent $event
+	 * @ignoreCancelled true
+	 */
+
 	public function factionBlockBreakProtect(BlockBreakEvent $event){
 		$x = $event->getBlock()->getX();
 		$z = $event->getBlock()->getZ();
