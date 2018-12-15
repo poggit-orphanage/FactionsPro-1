@@ -398,10 +398,8 @@ class FactionCommands{
 						$result = $stmt->execute();
 						$this->plugin->db->query("DELETE FROM confirm WHERE player='$lowercaseName';");
 						$sender->sendMessage($this->plugin->formatMessage("You successfully joined $faction!", true));
-						if($this->plugin->getServer()->getPlayer($array["invitedby"])){
-							if($this->plugin->getServer()->getPlayer($array["invitedby"])){
-								$this->plugin->getServer()->getPlayer($array["invitedby"])->sendMessage($this->plugin->formatMessage("$playerName joined the faction!", true));
-							}
+						if($inviter = $this->plugin->getServer()->getPlayer($array["invitedby"])){
+							$inviter->sendMessage($this->plugin->formatMessage("$playerName joined the faction!", true));
 						}
 						if($this->plugin->prefs->get("FactionNametags")){
 							$this->plugin->updateTag($sender->getName());
