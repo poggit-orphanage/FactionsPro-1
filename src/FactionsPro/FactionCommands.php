@@ -17,13 +17,26 @@ class FactionCommands {
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool {
-        if ($sender instanceof Player) {
+        if (strtolower($command->getName()) !== "f" || empty($args)) {
+            $sender->sendMessage($this->plugin->formatMessage("Please use /f help for a list of commands"));
+            return true;
+        }
+        if (strtolower($args[0]) == "help") {
+            if (!isset($args[1]) || $args[1] == 1) {
+                $sender->sendMessage(TextFormat::BLUE . "FactionsPro Help Page 1 of 3" . TextFormat::RED . "\n/f about\n/f accept\n/f claim\n/f create <name>\n/f del\n/f demote <player>\n/f deny");
+            }
+            elseif ($args[1] == 2) {
+                $sender->sendMessage(TextFormat::BLUE . "FactionsPro Help Page 2 of 3" . TextFormat::RED . "\n/f home\n/f help <page>\n/f info\n/f info <faction>\n/f invite <player>\n/f kick <player>\n/f leader <player>\n/f leave");
+            } else {
+                $sender->sendMessage(TextFormat::BLUE . "FactionsPro Help Page 3 of 3" . TextFormat::RED . "\n/f motd\n/f promote <player>\n/f sethome\n/f unclaim\n/f unsethome\n/f unclaim <faction>\n/f forceunclaim [OP]<faction> : Deletes all faction land\n/f forcedelete <faction> : Delete the faction [OP]");
+            }
+            return true;
+        }
+        if (!$sender instanceof Player) {
+            $this->plugin->getServer()->getLogger()->info($this->plugin->formatMessage("Please run command in game"));
+            return true;
+        }
             $playerName = $sender->getPlayer()->getName();
-            if (strtolower($command->getName()) === "f") {
-                if (empty($args)) {
-                    $sender->sendMessage($this->plugin->formatMessage("Please use /f help for a list of commands"));
-                    return true;
-                }
 
                 /////////////////////////////// CREATE ///////////////////////////////
 
@@ -632,24 +645,6 @@ class FactionCommands {
                         $sender->sendMessage(TextFormat::YELLOW . "You are facing " . $points[$sender->getDirection()]);
                     }
                 }
-
-                if (strtolower($args[0]) == "help") {
-                    if (!isset($args[1]) || $args[1] == 1) {
-                        $sender->sendMessage(TextFormat::BLUE . "FactionsPro Help Page 1 of 3" . TextFormat::RED . "\n/f about\n/f accept\n/f claim\n/f create <name>\n/f del\n/f demote <player>\n/f deny");
-                        return true;
-                    }
-                    if ($args[1] == 2) {
-                        $sender->sendMessage(TextFormat::BLUE . "FactionsPro Help Page 2 of 3" . TextFormat::RED . "\n/f home\n/f help <page>\n/f info\n/f info <faction>\n/f invite <player>\n/f kick <player>\n/f leader <player>\n/f leave");
-                        return true;
-                    } else {
-                        $sender->sendMessage(TextFormat::BLUE . "FactionsPro Help Page 3 of 3" . TextFormat::RED . "\n/f motd\n/f promote <player>\n/f sethome\n/f unclaim\n/f unsethome\n/f unclaim <faction>\n/f forceunclaim [OP]<faction> : Deletes all faction land\n/f forcedelete <faction> : Delete the faction [OP]");
-                        return true;
-                    }
-                }
-            }
-        } else {
-            $this->plugin->getServer()->getLogger()->info($this->plugin->formatMessage("Please run command in game"));
-        }
         return true;
     }
 

@@ -1,7 +1,7 @@
 name: FactionsPro
-author: Tethered_, HostingItAll.com
+author: Tethered_
 description: A Plugin For Easily Managing Factions
-version: 1.4.9
+version: 1.4.10
 main: FactionsPro\FactionMain
 api: [3.0.0]
 softdepend: ["PureChat", "AntiSpamPro"]
