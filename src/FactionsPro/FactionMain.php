@@ -39,11 +39,6 @@ class FactionMain extends PluginBase implements Listener {
             $this->getLogger()->info("AntiSpamPro Integration Enabled");
         }
 
-        $this->purechat = $this->getServer()->getPluginManager()->getPlugin("PureChat");
-        if ($this->purechat) {
-            $this->getLogger()->info("PureChat Integration Enabled");
-        }
-
         $this->prefs = new Config($this->getDataFolder() . "Prefs.yml", CONFIG::YAML, array(
             "MaxFactionNameLength" => 20,
             "MaxPlayersPerFaction" => 10,
@@ -291,6 +286,9 @@ class FactionMain extends PluginBase implements Listener {
     }
 
     public function updateTag($playername) {
+        if (!isset($this->purechat)){
+            $this->purechat = $this->getServer()->getPluginManager()->getPlugin("PureChat");
+        }
         $p = $this->getServer()->getPlayer($playername);
         $f = $this->getPlayerFaction($playername);
         if (!$this->isInFaction($playername)) {

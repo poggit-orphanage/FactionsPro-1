@@ -1,10 +1,10 @@
 name: FactionsPro
 author: Tethered_
 description: A Plugin For Easily Managing Factions
-version: 1.4.10
+version: 1.4.11
 main: FactionsPro\FactionMain
 api: [3.0.0]
-softdepend: ["PureChat", "AntiSpamPro"]
+softdepend: ["AntiSpamPro"]
 commands:
   f:
     description: use /f help for all parameters
